@@ -9,6 +9,6 @@ class User(interfazclass):
 
     def add_place(self, Place):
         self.places.append(Place)
-    
+
     def add_review(self, Review):
         self.places.append(Review)
