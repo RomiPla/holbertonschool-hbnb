@@ -1,4 +1,6 @@
-class User(interfazclass):
+from basemodel import Basemodel
+
+class User(Basemodel):
     def __init__(self, email, first_name, last_name):
         super().__init__()
         self.email = email
@@ -11,4 +13,4 @@ class User(interfazclass):
         self.places.append(Place)
 
     def add_review(self, Review):
-        self.places.append(Review)
+        self.reviews.append(Review)

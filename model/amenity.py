@@ -1,9 +1,9 @@
 """
     Creacion clase Amenity
 """
-class Amenity():
-    def __init__(self, name):
-       self.name = ""
+from basemodel import Basemodel
 
-def add_amenity(self, Amenity):
-        self.name.append(Amenity)
+class Amenity(Basemodel):
+    def __init__(self, name):
+       super().__init__()
+       self.name = name
