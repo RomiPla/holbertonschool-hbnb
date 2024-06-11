@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+
+import unittest
+sys.path.append()
+from user.py import User
+from country.py import Country
+
+class TestUser(unittest.TestCase):
+
+    def test_user_first_name(self):
+        user = User('Pedro')
+        self.assertEqual(user.first_name, 'Pedro')
+
+        with self.assertRaises(TypeError, msg="Numbers in name campus are forbiden"):
+            user = User('Pedro123')
+        with self.assertRaises(TypeError, msg="Not especials simbols allowed"):
+            user = User('Pedro!')
+
+        with self.assertRaises(TypeError, msg="Name could not be empty"):
+            user = User()
+        
+        with self.assertRaises(TypeError, msg="Name could not be empty"):
+            user = User("")
+
+    def test_user_last_name(self):
+        user = User('Pacheco')
+        self.assertEqual(user.last_name, 'Pacheco')
+
+        with self.assertRaises(TypeError, msg="Numbers in name campus are forbiden"):        
+            user = User('Pacheco123')
+
+        with self.assertRaises(TypeError, msg="Not especials simbols allowed"):
+            user = User('Pacheco!')
+
+        with self.assertRaises(TypeError, msg="Last name could not be empty"):
+            user = User()
+
+        with self.assertRaises(TypeError, msg="Name could not be empty"):
+            user = User("")
+
+    def test_user_valid_email(self):
+        user = User('pepe@pepe.com')
+        self.assertTrue(user.email)
+        user = User('pe_e@pepe.com')
+        self.assertTrue(user.email)
+        user = User('pe.e@pepe.com')
+        self.assertTrue(user.email)
+
+    def test_user_not_valid_email(self):
+        user = User('pepepepe.com')
+        self.assertFalse(user.email)
+
+        user = User('pepepepecom')
+        self.assertFalse(user.email)
+        
+        user = User('@pepepepe.com')
+        self.assertFalse(user.email)
+
+        user = User('pepe@pepecom')
+        self.assertFalse(user.email)
+
+        user = User('')
+        self.assertFalse(user.email)
+
+class TestCountry(unittest.TestCase):
+    def test_country_code(self):
+        self.assertEqual(country.code, "Canada" )
+if __name__ == '__main__':
+    unittest.main()
