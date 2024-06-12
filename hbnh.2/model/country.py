@@ -1,26 +1,28 @@
 #!/usr/bin/python3
 import pycountry
+from datamanager import DataManager
+
 
 class Country:
-    _countries = {}
+#    _countries = {}
 
     def __init__(self, code, name):
         self._code = code
         self._name = name
 
-    @property
+    """@property
     def code(self):
         return self._code
 
     @property
     def name(self):
-        return self._name
+        return self._name"""
 
     @classmethod
     def preload_countries(cls):
-        cls._countries = {country.alpha_2: country.name for country in pycountry.countries}
+        DataManager.data["country"] = {country.alpha_2: country.name for country in pycountry.countries}
 
-    @classmethod
+    """@classmethod
     def get_country_name(cls, code):
         code = code.upper()
         if code in cls._countries:
@@ -38,7 +40,11 @@ class Country:
 
     def __repr__(self):
         return f"Country(code='{self.code}', name='{self.name}')"
-
-contries = Country
+    """
+"""contries = Country
 C_dic = contries.preload_countries()
-print(C_dic)
+print(C_dic)"""
+
+"""print(Basemodel.data)
+Country.preload_countries()
+print(Basemodel.data)"""
