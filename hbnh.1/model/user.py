@@ -70,3 +70,8 @@ special characters.")
 #pepe2 = User("maria2@pepe.com", "maria", "lacra")
 #print(pepe2.__dict__)
 #print(pepe.data)
+    @classmethod
+    def delete(cls, place_id):
+        if not cls.data["user"].get(place_id):
+             raise ValueError(f"Place with id {place_id} does not exist.")
+        del cls.data["user"][place_id]

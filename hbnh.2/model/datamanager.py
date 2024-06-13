@@ -1,4 +1,4 @@
-import IPersistenceManager
+from IPersistenceManager import IPersistenceManager
 import datetime
 
 class DataManager(IPersistenceManager):

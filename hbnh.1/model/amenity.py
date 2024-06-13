@@ -13,3 +13,8 @@ special characters.")
        super().__init__()
        self.name = name
        self.save_data()
+    @classmethod
+    def delete(cls, place_id):
+        if not cls.data["amenities"].get(place_id):
+             raise ValueError(f"Place with id {place_id} does not exist.")
+        del cls.data["amanities"][place_id]

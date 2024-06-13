@@ -50,3 +50,9 @@ class Review(Basemodel):
     @property
     def place(self):
         return self.data["place"].get(self.place_id)
+    
+    @classmethod
+    def delete(cls, place_id):
+        if not cls.data["review"].get(place_id):
+             raise ValueError(f"Place with id {place_id} does not exist.")
+        del cls.data["review"][place_id]
