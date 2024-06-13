@@ -40,6 +40,7 @@ class Review(Basemodel):
             temp_rating = self.rating if key != 'rating' else value
             temp_comment = self.comment if key != 'comment' else value
             self.validate_review(temp_user_id, temp_place_id, temp_rating, temp_comment)
+            self.update_at()
         super().__setattr__(key, value)
 
     @property
