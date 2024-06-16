@@ -10,6 +10,7 @@ import re
 from abc import ABC, abstractmethod
 import json
 import os
+from uuid import UUID
 
 class IPersistenceManager(ABC):
        @abstractmethod
@@ -49,7 +50,7 @@ class DataManager(IPersistenceManager):
         if entity_type in self.data:
             return self.data[entity_type].get(entity_id)
         return None
-    
+
     @classmethod
     def get_all_class(self, entity_type):
         if entity_type in self.data:
@@ -59,7 +60,7 @@ class DataManager(IPersistenceManager):
     @classmethod
     def update(self, entity):
         to_update = DataManager.get(entity.id, type(entity).__name__)
-        if to_update:
+        if to_update is not None:
             to_update.updated_at = datetime.now()
             DataManager.save(to_update)
         """entity_type = type(entity).__name__
@@ -80,6 +81,15 @@ class Basemodel(ABC):
         self.id = uuid4()
         self.created_at = datetime.now()
         self.updated_at = self.created_at
+    
+    @abstractmethod
+    def to_dict(self):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def to_obj(self):
+        pass
 
 class User(Basemodel):
     def __init__(self, email, first_name, last_name):
@@ -89,6 +99,32 @@ class User(Basemodel):
         self.first_name = first_name
         self.last_name = last_name
         #DataManager.save(self)
+
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            '__class__': self.__class__.__name__
+        }
+    
+    @classmethod
+    def to_obj(cls, dict_obj):
+        id = UUID(dict_obj['id'])
+        created_at = datetime.fromisoformat(dict_obj['created_at'])
+        updated_at = datetime.fromisoformat(dict_obj['updated_at'])
+        email = dict_obj['email']
+        first_name = dict_obj['first_name']
+        last_name = dict_obj['last_name']
+
+        user = cls(email, first_name, last_name)
+        user.id = id
+        user.created_at = created_at
+        user.updated_at = updated_at
+        return user
 
     def validate_user(self, email, first_name, last_name):
         if not first_name or not isinstance(first_name, str) or not first_name.isalpha():
@@ -143,9 +179,9 @@ class User(Basemodel):
 #API METHODS
     @classmethod
     def get_all(cls):
-        all_users = DataManager.get_all(cls.__name__)
+        all_users = DataManager.get_all_class(cls.__name__)
         if all_users is not None:
-            return [users.__dict__ for users in all_users.values()]
+            return [users.to_dict() for users in all_users.values()]
         return []
     
     @classmethod
@@ -167,30 +203,53 @@ class User(Basemodel):
 class Storage:
     """Clase que gestiona la persistencia utilizando DataManager y JSON"""
 
-    __file_path = "file.json"
-    __objects = DataManager()
+    file_path = "file.json"
+    #objects = DataManager()
 
-    def all(self):
-        """Retorna el diccionario de objetos de DataManager"""
-        return self.__objects.data
+    #def all(self):
+    #    """Retorna el diccionario de objetos de DataManager"""
+    #    return self.objects.data
 
-    def new(self, obj):
-        """Agrega una nueva instancia en el diccionario de objetos"""
-        self.__objects.save(obj)
+    #def new(self, obj):
+     #   """Agrega una nueva instancia en el diccionario de objetos"""
+     #   self.objects.save(obj)
 
+    @classmethod
     def save(self):
-        """Serializa __objects a JSON y lo guarda en el archivo"""
+        """Serializa todo DataManager a JSON y guarda en el archivo"""
         obj_dict = {}
-        for entity_type, entities in self.__objects.data.items():
-            for entity_id, entity in entities.items():
-                obj_dict[f"{entity_type}.{entity_id}"] = entity.to_dict()
+        for entity_type in DataManager.data:
+            obj_dict[entity_type] = {}
+            for entity_id in DataManager.data[entity_type]:
+                # creo una instancia del objeto en modo #to_dict#
+                # para asegurarme de tener su id en str y sus
+                # fechas en isoformat
+                to_save = DataManager.data[entity_type][entity_id].to_dict()
+                #print(to_save)
+                obj_dict[entity_type][to_save["id"]] = to_save
 
-        with open(Storage.__file_path, "w") as file:
+        with open(Storage.file_path, "w") as file:
             json.dump(obj_dict, file)
 
-    def reload(self):
-        """Deserializa el JSON desde el archivo a __objects"""
-        self.defclass = {
+    @classmethod
+    def load(self):
+        """Deserializa el JSON desde el archivo y carga en DataManager"""
+        defclass = {
+            'User': User,
+        }
+
+        if os.path.exists(Storage.file_path):
+            with open(Storage.file_path, "r") as file:
+                obj_dict = json.load(file)
+                for entity_type in obj_dict:
+                    if entity_type in defclass:
+                        for entity_data in obj_dict[entity_type].values():
+                            new_obj = defclass[entity_type].to_obj(entity_data)
+                            DataManager.save(new_obj)
+
+        
+        
+        """self.defclass = {
             'Basemodel': Basemodel,
             'User': User,
             #'Amenity': Amenity,
@@ -207,7 +266,9 @@ class Storage:
                     classname = value["__class__"]
                     if classname in self.defclass:
                         newobj = self.defclass[classname](**value)
-                        self.__objects.save(newobj)
+                        self.__objects.save(newobj)"""
+
+
 #############################################################
 
 
