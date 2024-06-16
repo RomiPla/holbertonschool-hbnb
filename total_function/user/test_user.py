@@ -8,6 +8,7 @@ from uuid import uuid4
 from abc import ABC, abstractmethod
 from user_total import User
 from user_total import DataManager, IPersistenceManager, Storage
+from api import app
 
 class TestUser_Logical(unittest.TestCase):
 
@@ -97,25 +98,127 @@ class TestUser_DataManager(unittest.TestCase):
         self.assertEqual(all_users_saved, users)
 
 class TestUser_Storage(unittest.TestCase):
+    def setUp(self):
+        # limpiar data
+        DataManager.data = {}
 
-
+    def cleaner(self):
+        # borrar json si existe
+        if os.path.exists(Storage.file_path):
+            os.remove(Storage.file_path) 
+    
     def test_storage_serialization(self):
-        storage = Storage()
-        user = User('pepe@pepe.com', 'pedro', 'pe')
-        storage.new(user)
-        storage.save()
-        self.assertTrue(os.path.exists(Storage._Storage__file_path))
+        user = User('pepe@pepe.com', 'PEDRO', 'pe')
+        DataManager.save(user)
+        Storage.save()
+        self.assertTrue(os.path.exists(Storage.file_path))
 
-    """def test_storage_deserialization(self):
-        storage = Storage()
-        user = User('pepe@pepe.com', 'pedro', 'pe')
-        storage.new(user)
-        storage.save()
-        storage.reload()
-        retrieved_user = DataManager.get(user.id, 'User')
-        self.assertEqual(user.email, retrieved_user.email)
-        self.assertEqual(user.first_name, retrieved_user.first_name)
-        self.assertEqual(user.last_name, retrieved_user.last_name)"""
+    def test_storage_deserialization(self):
+        user = User('pepe@pepe.com', 'pedro', 'Pe')
+        DataManager.save(user)
+        Storage.save()
+        self.setUp()
+        Storage.load()
+        load_user = DataManager.get(user.id, 'User')
+        self.assertEqual(user.email, load_user.email)
+        self.assertEqual(user.first_name, load_user.first_name)
+        self.assertEqual(user.last_name, load_user.last_name)
+
+class TestUser_API(unittest.TestCase):
+
+    def setUp(self):
+        self.app = app.test_client()
+        self.app.testing = True
+        DataManager.data = {}  
+
+    def cleaner(self):
+        if os.path.exists(Storage.file_path):
+            os.remove(Storage.file_path)
+
+    def test_add_user(self):
+        user_data = {
+            "email": "test@test.com",
+            "first_name": "Test",
+            "last_name": "User"
+        }
+        response = self.app.post('/users', json=user_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("message", response.get_json())
+
+    """def test_get_all_users(self):
+        user1 = User("test1@test.com", "ramon", "cri")
+        user1.add_user()
+        user2 = User("test2@test.com", "jonh", "wick")
+        user2.add_user()
+        response = self.app.get('/users')
+        self.assertEqual(response.status_code, 200)
+        users = response.get_json()
+        self.assertEqual(len(users), 2)
+
+    def test_get_user(self):
+        user = User("test@test.com", "Test", "User")
+        user.add_user()
+        response = self.app.get(f'/users/{user.id}')
+        self.assertEqual(response.status_code, 200)
+        user_data = response.get_json()
+        self.assertEqual(user_data["email"], user.email)
+
+    def test_update_user(self):
+        user = User("test@test.com", "Test", "User")
+        user.add_user()
+        update_data = {
+            "first_name": "UpdatedTest"
+        }
+        response = self.app.put(f'/users/{user.id}', json=update_data)
+        self.assertEqual(response.status_code, 200)
+        updated_user = User.get(user.id)
+        self.assertEqual(updated_user.first_name, "UpdatedTest")
+
+    def test_delete_user(self):
+        user = User("test@test.com", "Test", "User")
+        user.add_user()
+        response = self.app.delete(f'/users/{user.id}')
+        self.assertEqual(response.status_code, 204)
+        deleted_user = User.get(user.id)
+        self.assertIsNone(deleted_user)
+
+    def test_add_user_invalid_email(self):
+        user_data = {
+            "email": "invalid_email",
+            "first_name": "Test",
+            "last_name": "User"
+        }
+        response = self.app.post('/users', json=user_data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_add_user_duplicate_email(self):
+        user_data = {
+            "email": "duplicate@test.com",
+            "first_name": "Test",
+            "last_name": "User"
+        }
+        self.app.post('/users', json=user_data)
+        response = self.app.post('/users', json=user_data)
+        self.assertEqual(response.status_code, 409)
+
+    def test_add_user_invalid_first_name(self):
+        user_data = {
+            "email": "test@test.com",
+            "first_name": "ggggggggg",
+            "last_name": "User"
+        }
+        response = self.app.post('/users', json=user_data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_add_user_invalid_last_name(self):
+        user_data = {
+            "email": "test@test.com",
+            "first_name": "Test",
+            "last_name": "Usez"
+        }
+        response = self.app.post('/users', json=user_data)
+        self.assertEqual(response.status_code, 400)"""
+
 
 if __name__ == '__main__':
     unittest.main()
