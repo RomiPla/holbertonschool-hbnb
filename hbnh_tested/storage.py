@@ -1,6 +1,9 @@
 from datamanager import DataManager
 from user import User
 from country import Country
+from city import City
+from amenity import Amenity
+from place import Place
 import json
 import os
 
@@ -14,13 +17,14 @@ class Storage:
         obj_dict = {}
         for entity_type in DataManager.data:
             obj_dict[entity_type] = {}
-            if entity_type is "Country":
+            if entity_type == "Country":
                 for country_code in DataManager.data[entity_type]:
                     to_save = DataManager.data[entity_type][country_code].to_dict()
                     obj_dict[entity_type][to_save["code"]] = to_save
             else:
-                for entity_id in DataManager.data[entity_type]:
-                    to_save = DataManager.data[entity_type][entity_id].to_dict()
+                for entity_id, entity in DataManager.data[entity_type].items():
+                    #to_save = DataManager.data[entity_type][entity_id].to_dict()
+                    to_save = entity.to_dict()
                     obj_dict[entity_type][to_save["id"]] = to_save
 
         with open(Storage.file_path, "w") as file:
@@ -30,7 +34,10 @@ class Storage:
     def load(self):
         defclass = {
             "User": User,
-            "Country": Country
+            "Country": Country,
+            "City": City,
+            "Amenity": Amenity,
+            "Place": Place
         }
 
         if os.path.exists(Storage.file_path):
