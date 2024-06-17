@@ -5,7 +5,7 @@ import json
 import os
 from uuid import uuid4, UUID
 from place_total import Place
-from datamanager import DataManager, IPersistenceManager, Storage
+from place_total import DataManager, IPersistenceManager, Storage
 from api import app
 
 class TestPlace_Logical(unittest.TestCase):
