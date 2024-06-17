@@ -2,9 +2,11 @@ from user import User, ConflictError
 from country import Country
 from city import City
 from storage import Storage
+from place import Place
 from flask import  Flask, jsonify, request
 import re
 from uuid import UUID
+from amenity import Amenity
 
 app = Flask(__name__)
 
@@ -262,6 +264,109 @@ def delete_city(city_id):
         return jsonify({"error": "City not found"}), 404
     City.delete(city)
     return '', 204
+
+
+#####################
+#     AMENITY       #
+#####################
+
+def validate_amenity_name(name):
+    if not name or not isinstance(name, str):
+        raise TypeError("Name must be a non-empty string")
+def validate_amenity_description(description):
+    if not description or not isinstance(description, str):
+        raise TypeError("Description must be a non-empty string")
+
+def validate_amenity(name, description):
+        validate_amenity_name(name)
+        validate_amenity_description(description)
+        
+
+@app.route("/amenities")
+def get_amenities():
+    return jsonify(Amenity.get_all())
+
+@app.route("/amenities/<amenity_id>", methods=['GET'])
+def get_amenity(amenity_id):
+    try:
+        amenity_uuid = UUID(amenity_id)
+    except ValueError:
+        return jsonify({"error": "Invalid amenity ID format"}), 400
+    amenity = Amenity.get(amenity_uuid)
+    if amenity:
+        return jsonify(amenity.to_dict())
+    else:
+        return jsonify({"error": "Amenity not found"}), 404
+    
+@app.route('/amenities', methods=['POST'])
+def add_amenity():
+    new_amenity = request.get_json()
+    name = new_amenity.get("name")
+    description = new_amenity.get("description")
+    try:
+        validate_amenity(name, description)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    new = Amenity(name, description)
+    Amenity.add(new)
+    return jsonify({"message": "Amenity added", "amenity": new.to_dict()}), 201
+
+@app.route('/amenities/<amenity_id>', methods=['PUT'])
+def update_amenity(amenity_id):
+    try:
+        amenity_uuid = UUID(amenity_id)
+    except ValueError:
+        return jsonify({"error": "Invalid amenity ID format"}), 400
+    to_update = Amenity.get(amenity_uuid)
+    if to_update is not None:
+        update_data = request.get_json()
+        name = update_data.get("name")
+        description = update_data.get("description")
+
+        if name:
+            validate_amenity_name(name)
+            to_update.name = name
+        if description:
+            validate_amenity_description(description)
+            to_update.description = description
+
+        Amenity.update(to_update)
+        return jsonify({"message": "Amenity updated", "amenity": to_update.to_dict()}), 200
+    else:
+        return jsonify({"error": "Amenity not found"}), 404
+
+@app.route('/amenities/<amenity_id>', methods=['DELETE'])
+def delete_amenity(amenity_id):
+    try:
+        amenity_uuid = UUID(amenity_id)
+    except ValueError:
+        return jsonify({"error": "Invalid amenity ID format"}), 400
+    to_delete = Amenity.get(amenity_uuid)
+    if to_delete is not None:
+        Amenity.delete(to_delete)
+        return '', 204
+    else:
+        return jsonify({"error": "Amenity not found"}), 404
+    
+#####################
+#     PLACE         #
+#####################
+
+@app.route("/places")
+def get_places():
+    return jsonify(Place.get_all())
+
+@app.route("/places/<place_id>")
+def get_place(place_id):
+    try:
+        place_uuid = UUID(place_id)
+    except ValueError:
+        return jsonify({"error": "Invalid user ID format"}), 400
+    place = Place.get(place_uuid)
+    if place:
+        return jsonify(place.to_dict())
+    else:
+        return jsonify({"error": "Place not found"}), 404
 
 if __name__ == "__main__":
     Storage.load()
