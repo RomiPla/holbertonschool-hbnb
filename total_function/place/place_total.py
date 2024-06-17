@@ -2,7 +2,7 @@
 
 #from datamanager import DataManager
 #from basemodel import Basemodel
-#from review import Review
+#from place import Place
 from abc import ABC
 from datetime import datetime
 from uuid import uuid4
@@ -156,3 +156,17 @@ class Place(Basemodel):
     @classmethod
     def delete(cls, entity):
         DataManager.delete(entity.id, cls.__name__)
+
+class Storage:
+    """Clase que gestiona la persistencia utilizando DataManager y JSON"""
+
+    file_path = "file.json"
+    #objects = DataManager()
+
+    #def all(self):
+    #    """Retorna el diccionario de objetos de DataManager"""
+    #    return self.objects.data
+
+    #def new(self, obj):
+     #   """Agrega una nueva instancia en el diccionario de objetos"""
+     #   self.objects.save(obj)

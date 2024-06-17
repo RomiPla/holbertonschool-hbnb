@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-from datamanager import DataManager
-from basemodel import Basemodel
+#from datamanager import DataManager
+#from basemodel import Basemodel
+#from city import City
 from abc import ABC
 from datetime import datetime
 from uuid import uuid4
@@ -74,6 +75,20 @@ class DataManager(IPersistenceManager):
         if entity_type in self.data:
             if entity_id in self.data[entity_type]:
                 del self.data[entity_type][entity_id]
+
+class Storage:
+    """Clase que gestiona la persistencia utilizando DataManager y JSON"""
+
+    file_path = "file.json"
+    #objects = DataManager()
+
+    #def all(self):
+    #    """Retorna el diccionario de objetos de DataManager"""
+    #    return self.objects.data
+
+    #def new(self, obj):
+     #   """Agrega una nueva instancia en el diccionario de objetos"""
+     #   self.objects.save(obj)
 
 class Basemodel(ABC):
     def __init__(self):

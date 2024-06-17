@@ -151,3 +151,17 @@ class Review(Basemodel):
     @property
     def place(self):
         return DataManager.get(self.place_id, "Place")
+
+class Storage:
+    """Clase que gestiona la persistencia utilizando DataManager y JSON"""
+
+    file_path = "file.json"
+    #objects = DataManager()
+
+    #def all(self):
+    #    """Retorna el diccionario de objetos de DataManager"""
+    #    return self.objects.data
+
+    #def new(self, obj):
+     #   """Agrega una nueva instancia en el diccionario de objetos"""
+     #   self.objects.save(obj)

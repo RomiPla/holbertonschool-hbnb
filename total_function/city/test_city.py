@@ -6,7 +6,7 @@ import json
 import os
 from uuid import uuid4
 from abc import ABC, abstractmethod
-from city import City
+from city_total import City
 from city_total import DataManager, Storage, IPersistenceManager
 from api import app
 

@@ -4,7 +4,7 @@ import unittest
 import os
 from uuid import uuid4
 from review_total import review
-from review_total import Review, DataManager, Storage
+from review_total import Review, DataManager, Storage, IPersistenceManager
 from api import app
 
 class TestReview_Logical(unittest.TestCase):
@@ -78,7 +78,12 @@ class TestReview_DataManager(unittest.TestCase):
 class TestReview_Storage(unittest.TestCase):
 
     def setUp(self):
-        DataManager.data = {}
+        DataManager.data ={
+    "user": {
+        1: {"id": 1, "name": "User 1"},
+        2: {"id": 2, "name": "User 2"},
+    },
+    }
 
     def cleaner(self):
         if os.path.exists(Storage.file_path):
