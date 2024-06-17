@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-from datamanager import DataManager
-from basemodel import Basemodel
+from model.datamanager import DataManager
+from model.basemodel import Basemodel
 #from review import Review
 import re
 
@@ -14,28 +14,28 @@ class User(Basemodel):
         self.last_name = last_name
         #DataManager.save(self)
 
-    """def validate_user(self, email, first_name, last_name):
-        if not email or not first_name or not last_name:
-            raise ValueError("All fields must be filled in.")
+#     def validate_user(self, email, first_name, last_name):
+#         if not email or not first_name or not last_name:
+#             raise ValueError("All fields must be filled in.")
         
-        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", email):
-            raise ValueError("Invalid email format.")
+#         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", email):
+#             raise ValueError("Invalid email format.")
         
-        if type(self).__name__ in DataManager.data:
-            for users in DataManager.data[type(self).__name__].values():
-                if users.email == email:
-                    raise ValueError("Email already taken")
+#         if type(self).__name__ in DataManager.data:
+#             for users in DataManager.data[type(self).__name__].values():
+#                 if users.email == email:
+#                     raise ValueError("Email already taken")
 
-        if not isinstance(first_name, str) or not isinstance(last_name, str):
-            raise ValueError("First name and last name must be strings.")
+#         if not isinstance(first_name, str) or not isinstance(last_name, str):
+#             raise ValueError("First name and last name must be strings.")
         
-        if not re.match(r"^[A-Za-z]+$", first_name):
-            raise ValueError("First name cannot contain numbers or \
-special characters.")
+#         if not re.match(r"^[A-Za-z]+$", first_name):
+#             raise ValueError("First name cannot contain numbers or
+# special characters.")
         
-        if not re.match(r"^[A-Za-z]+$", last_name):
-            raise ValueError("Last name cannot contain numbers or \
-special characters.")"""
+#         if not re.match(r"^[A-Za-z]+$", last_name):
+#             raise ValueError("Last name cannot contain numbers or
+# special characters.")
 
     @classmethod
     def validate_email(self, email):

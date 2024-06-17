@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from flask import  Flask, jsonify, request
-from user import User
+from model.user import User
 import re
 
 app = Flask(__name__)
@@ -57,7 +57,7 @@ def delete_user(user_id):
         return jsonify({"error": "User not found"}), 404
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
 
 
 
