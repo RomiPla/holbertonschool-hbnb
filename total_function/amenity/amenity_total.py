@@ -1,41 +1,30 @@
 #!/usr/bin/python3
 
-#from datamanager import DataManager
-#from basemodel import Basemodel
-#from review import Review
-from abc import ABC
-from datetime import datetime
-from uuid import uuid4
-import re
 from abc import ABC, abstractmethod
+from datetime import datetime
+from uuid import uuid4, UUID
+import re
 import json
 import os
-from uuid import UUID
 
 class IPersistenceManager(ABC):
-       @abstractmethod
-       def save(self, entity):
-           pass
+    @abstractmethod
+    def save(self, entity):
+        pass
 
-       @abstractmethod
-       def get(self, entity_id, entity_type):
-           pass
+    @abstractmethod
+    def get(self, entity_id, entity_type):
+        pass
 
-       @abstractmethod
-       def update(self, entity):
-           pass
+    @abstractmethod
+    def update(self, entity):
+        pass
 
-       @abstractmethod
-       def delete(self, entity_id, entity_type):
-           pass
-
-#from IPersistenceManager import IPersistenceManager
-#import datetime
+    @abstractmethod
+    def delete(self, entity_id, entity_type):
+        pass
 
 class DataManager(IPersistenceManager):
-    #def __init__(self):
-    #    self.data = {}
-
     data = {}
 
     @classmethod
@@ -63,20 +52,12 @@ class DataManager(IPersistenceManager):
         if to_update is not None:
             to_update.updated_at = datetime.now()
             DataManager.save(to_update)
-        """entity_type = type(entity).__name__
-        if entity_type in self.data:
-            entity_id = entity.id
-            if entity_id in self.data[entity_type]:
-                entity.updated_at = datetime.now()
-                #self.data[entity_type][entity_id] = entity"""
 
     @classmethod
     def delete(self, entity_id, entity_type):
         if entity_type in self.data:
             if entity_id in self.data[entity_type]:
                 del self.data[entity_type][entity_id]
-
-
 
 class Basemodel(ABC):
     def __init__(self):
@@ -90,11 +71,8 @@ class Basemodel(ABC):
 
     @classmethod
     @abstractmethod
-    def to_obj(self):
+    def to_obj(cls, dict_obj):
         pass
-
-class ConflictError(Exception):
-    pass
 
 class User(Basemodel):
     def __init__(self, email, first_name, last_name):
@@ -103,7 +81,6 @@ class User(Basemodel):
         self.email = email
         self.first_name = first_name
         self.last_name = last_name
-        #DataManager.save(self)
 
     def to_dict(self):
         return {
@@ -140,44 +117,30 @@ class User(Basemodel):
         
         if not email or not isinstance(email, str) or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             raise TypeError("Email must be a non-empty string in a valid email format")
-
-        self.validate_email(email)
+        
+        if type(self).__name__ in DataManager.data:
+            for users in DataManager.data[type(self).__name__].values():
+                if users.email == email:
+                    raise ValueError("Email already taken")
 
     @classmethod
-    def validate_email(cls, email):
-        if cls.__name__ in DataManager.data:
-            for users in DataManager.data[cls.__name__].values():
+    def validate_email(self, email):
+        if type(self).__name__ in DataManager.data:
+            for users in DataManager.data[type(self).__name__].values():
                 if users.email == email:
-                    raise ConflictError("Email already taken")
-
-        #return True
+                    return False
+        return True
 
     @property
     def places(self):
-        key = "place"
+        key = "Place"
         places = []
         if key in DataManager.data:
             for place in DataManager.data[key].values():
                 if place.host_id == self.id:
                     places.append(place)
         return places
-        #return [place for place in self.data["place"].values() if place.host_id == self.id]
 
-    """def __setattr__(self, key, value):
-        self.validate_user(self.email, self.first_name, self.last_name)
-        self.key = value"""
-    #no logro codear el _setattr_ para que verifique antes de modificar el objeto
-
-    """@property
-    def reviews(self):
-        reviews = []
-        for review in self.data["review"].values():
-            if review.user_id == self.id:
-                reviews.append(review)
-        return reviews
-        #return [review for review in self.data["review"].values() if review.user_id == self.id]"""
-############################################################
-#API METHODS
     @classmethod
     def get_all(cls):
         all_users = DataManager.get_all_class(cls.__name__)
@@ -189,7 +152,6 @@ class User(Basemodel):
     def get(cls, id):
         return DataManager.get(id, cls.__name__)
         
-    #@classmethod
     def add_user(self):
         DataManager.save(self)
 
@@ -201,32 +163,76 @@ class User(Basemodel):
     def delete(cls, entity):
         DataManager.delete(entity.id, cls.__name__)
 
+class Amenity(Basemodel):
+    def __init__(self, name, description):
+        self.validate_amenity(name, description)
+        super().__init__()
+        self.name = name
+        self.description = description
+
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'name': self.name,
+            'description': self.description,
+            '__class__': self.__class__.__name__
+        }
+    
+    @classmethod
+    def to_obj(cls, dict_obj):
+        id = UUID(dict_obj['id'])
+        created_at = datetime.fromisoformat(dict_obj['created_at'])
+        updated_at = datetime.fromisoformat(dict_obj['updated_at'])
+        name = dict_obj['name']
+        description = dict_obj['description']
+
+        amenity = cls(name, description)
+        amenity.id = id
+        amenity.created_at = created_at
+        amenity.updated_at = updated_at
+        return amenity
+
+    def validate_amenity(self, name, description):
+        if not name or not isinstance(name, str):
+            raise TypeError("Name must be a non-empty string")
+        
+        if not description or not isinstance(description, str):
+            raise TypeError("Description must be a non-empty string")
+
+    @classmethod
+    def get_all(cls):
+        all_amenities = DataManager.get_all_class(cls.__name__)
+        if all_amenities is not None:
+            return [amenities.to_dict() for amenities in all_amenities.values()]
+        return []
+    
+    @classmethod
+    def get(cls, id):
+        return DataManager.get(id, cls.__name__)
+        
+    def add_amenity(self):
+        DataManager.save(self)
+
+    @classmethod
+    def update(cls, entity):
+        DataManager.update(entity)
+
+    @classmethod
+    def delete(cls, entity):
+        DataManager.delete(entity.id, cls.__name__)
+
 class Storage:
-    """Clase que gestiona la persistencia utilizando DataManager y JSON"""
-
     file_path = "file.json"
-    #objects = DataManager()
-
-    #def all(self):
-    #    """Retorna el diccionario de objetos de DataManager"""
-    #    return self.objects.data
-
-    #def new(self, obj):
-     #   """Agrega una nueva instancia en el diccionario de objetos"""
-     #   self.objects.save(obj)
 
     @classmethod
     def save(self):
-        """Serializa todo DataManager a JSON y guarda en el archivo"""
         obj_dict = {}
         for entity_type in DataManager.data:
             obj_dict[entity_type] = {}
             for entity_id in DataManager.data[entity_type]:
-                # creo una instancia del objeto en modo #to_dict#
-                # para asegurarme de tener su id en str y sus
-                # fechas en isoformat
                 to_save = DataManager.data[entity_type][entity_id].to_dict()
-                #print(to_save)
                 obj_dict[entity_type][to_save["id"]] = to_save
 
         with open(Storage.file_path, "w") as file:
@@ -234,9 +240,9 @@ class Storage:
 
     @classmethod
     def load(self):
-        """Deserializa el JSON desde el archivo y carga en DataManager"""
         defclass = {
             'User': User,
+            'Amenity': Amenity,
         }
 
         if os.path.exists(Storage.file_path):
@@ -248,62 +254,29 @@ class Storage:
                             new_obj = defclass[entity_type].to_obj(entity_data)
                             DataManager.save(new_obj)
 
-        
-        
-        """self.defclass = {
-            'Basemodel': Basemodel,
-            'User': User,
-            #'Amenity': Amenity,
-           # 'City': City,
-            #'Country': Country,
-           # 'Place': Place,
-           # 'Review': Review,
-        }
 
-        if os.path.exists(Storage.__file_path):
-            with open(Storage.__file_path, "r") as file:
-                deserialized = json.load(file)
-                for key, value in deserialized.items():
-                    classname = value["__class__"]
-                    if classname in self.defclass:
-                        newobj = self.defclass[classname](**value)
-                        self.__objects.save(newobj)"""
+# Crear usuarios y amenidades
+user1 = User("user1@example.com", "John", "Doe")
+user2 = User("user2@example.com", "Jane", "Doe")
+amenity1 = Amenity("WiFi", "High-speed wireless internet")
+amenity2 = Amenity("Pool", "Outdoor swimming pool")
 
+# Guardar en DataManager
+user1.add_user()
+user2.add_user()
+amenity1.add_amenity()
+amenity2.add_amenity()
 
-#############################################################
+# Serializar a JSON
+Storage.save()
 
+# Limpiar y cargar desde JSON
+DataManager.data = {}
+Storage.load()
 
-"""pepe = User("pepe@pepe.com", "pepe", "cra")
-print(pepe.to_dict())
-print(DataManager.data)
-DataManager.save(pepe)
-print(DataManager.data)
-pepe2 = User("pepe@pepe.com", "pepe", "cra")
+# Verificar carga
+all_users = User.get_all()
+all_amenities = Amenity.get_all()
 
-DataManager.save(pepe2)
-print(DataManager.data)"""
-
-#pepe.first_name = "ramon"
-#print("User =", pepe.first_name, "update_at =", pepe.updated_at)
-
-#DataManager.update(pepe)
-
-#user_from_data = DataManager.get(pepe.id, "User")
-
-#print("User =", user_from_data.first_name, "update_at =", user_from_data.updated_at)
-
-#time.sleep(2)
-#DataManager.update(pepe)
-#print(DataManager.get(pepe.id,))
-
-#pepe.email = "cambio@email"
-#print(pepe.__dict__)
-#print(pepe.places)
-#pepe2 = User("maria2@pepe.com", "maria", "lacra")
-#print(pepe2.__dict__)
-#print(pepe.data)
-#val = User.get_user(pepe.id)
-#print("val")
-#print(val.__dict__)
-#print(DataManager.get_all("User").__dict__)
-#print(User.get_all_users())
+print(all_users)
+print(all_amenities)

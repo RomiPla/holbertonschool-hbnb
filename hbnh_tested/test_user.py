@@ -1,14 +1,12 @@
 #!/usr/bin/python3
-
 import unittest
-import datetime
-import json
 import os
-from uuid import uuid4
-from abc import ABC, abstractmethod
-from user_total import User
-from user_total import DataManager, IPersistenceManager, Storage
+from user import User
+from datamanager import DataManager
+from storage import Storage
 from api import app
+
+print("USER")
 
 class TestUser_Logical(unittest.TestCase):
 
@@ -147,9 +145,9 @@ class TestUser_API(unittest.TestCase):
 
     def test_get_all_users(self):
         user1 = User("test1@test.com", "ramon", "cri")
-        user1.add_user()
+        user1.add()
         user2 = User("test2@test.com", "jonh", "wick")
-        user2.add_user()
+        user2.add()
         response = self.app.get('/users')
         self.assertEqual(response.status_code, 200)
         users = response.get_json()
@@ -157,7 +155,7 @@ class TestUser_API(unittest.TestCase):
 
     def test_get_user(self):
         user = User("test@test.com", "Test", "User")
-        user.add_user()
+        user.add()
         response = self.app.get(f'/users/{user.id}')
         self.assertEqual(response.status_code, 200)
         user_data = response.get_json()
@@ -165,7 +163,7 @@ class TestUser_API(unittest.TestCase):
 
     def test_update_user(self):
         user = User("test@test.com", "Test", "User")
-        user.add_user()
+        user.add()
         update_data = {
             "first_name": "UpdatedTest"
         }
@@ -176,7 +174,7 @@ class TestUser_API(unittest.TestCase):
 
     def test_delete_user(self):
         user = User("test@test.com", "Test", "User")
-        user.add_user()
+        user.add()
         response = self.app.delete(f'/users/{user.id}')
         self.assertEqual(response.status_code, 204)
         deleted_user = User.get(user.id)

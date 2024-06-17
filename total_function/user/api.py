@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from user_total import User, Storage
+from user_total import User, Storage, ConflictError
 from flask import  Flask, jsonify, request
 import re
 from uuid import UUID
@@ -44,27 +44,47 @@ def add_user():
         validate_user(email, first_name, last_name)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except ConflictError as e:
+        return jsonify({"error": str(e)}), 409
+
     new = User(email, first_name, last_name)
     User.add_user(new)
     return jsonify({"message": "User added", "user": new.to_dict()}), 201
 
 @app.route('/users/<user_id>', methods=['PUT'])
 def update_user(user_id):
-    to_update = get_user(user_id)
-    if to_update is not None:
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        return jsonify({"error": "Invalid user ID format"}), 400
+    to_update = User.get(user_uuid)
+    if to_update:
         update_data = request.get_json()
         email = update_data.get("email")
         first_name = update_data.get("first_name")
         last_name = update_data.get("last_name")
 
         if email:
-            validate_email(email)
+            try:
+                validate_email(email)
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
+            except ConflictError as e:
+                return jsonify({"error": str(e)}), 409
             to_update.email = email
+
         if first_name:
-            validate_first_name(first_name)
+            try:
+                validate_first_name(first_name)
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
             to_update.first_name = first_name
+
         if last_name:
-            validate_last_name(last_name)
+            try:
+                validate_last_name(last_name)
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
             to_update.last_name = last_name
 
         User.update(to_update)
@@ -74,33 +94,17 @@ def update_user(user_id):
     
 @app.route('/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    to_delete = get_user(user_id)
-    if to_delete is not None:
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        return jsonify({"error": "Invalid user ID format"}), 400
+    to_delete = User.get(user_uuid)
+    if to_delete:
         User.delete(to_delete)
         return '', 204
     else:
         return jsonify({"error": "User not found"}), 404
 
-
-"""def validate_user(self, email, first_name, last_name):
-    validate_first_name(first_name)
-    validate_last_name(last_name)
-    validate_email(email)
-       
-def validate_email(email):
-    if not email or not isinstance(email, str) or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        return jsonify({"error": "Invalid email format."}), 400
-
-    if not User.validate_email(email):
-        return jsonify({"error": "Email already taken"}), 409
-
-def validate_first_name(first_name):
-    if not first_name or not isinstance(first_name, str) or not first_name.isalpha():
-        return jsonify({"error": "First name must be a non-empty string with only alphabetic characters."}), 400
-
-def validate_last_name(last_name):
-    if not last_name or not isinstance(last_name, str) or not last_name.isalpha():
-        return jsonify({"error": "Last name must be a non-empty string with only alphabetic characters."}), 400"""
 def validate_user(email, first_name, last_name):
     validate_first_name(first_name)
     validate_last_name(last_name)
@@ -110,8 +114,7 @@ def validate_email(email):
     if not email or not isinstance(email, str) or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         raise ValueError("Invalid email format.")
     
-    if not User.validate_email(email):
-        raise ValueError("Email already taken")
+    User.validate_email(email)
 
 def validate_first_name(first_name):
     if not first_name or not isinstance(first_name, str) or not first_name.isalpha():
