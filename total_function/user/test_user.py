@@ -145,7 +145,7 @@ class TestUser_API(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn("message", response.get_json())
 
-    """def test_get_all_users(self):
+    def test_get_all_users(self):
         user1 = User("test1@test.com", "ramon", "cri")
         user1.add_user()
         user2 = User("test2@test.com", "jonh", "wick")
@@ -204,7 +204,7 @@ class TestUser_API(unittest.TestCase):
     def test_add_user_invalid_first_name(self):
         user_data = {
             "email": "test@test.com",
-            "first_name": "ggggggggg",
+            "first_name": "gg!",
             "last_name": "User"
         }
         response = self.app.post('/users', json=user_data)
@@ -214,11 +214,10 @@ class TestUser_API(unittest.TestCase):
         user_data = {
             "email": "test@test.com",
             "first_name": "Test",
-            "last_name": "Usez"
+            "last_name": "Usez#"
         }
         response = self.app.post('/users', json=user_data)
-        self.assertEqual(response.status_code, 400)"""
-
+        self.assertEqual(response.status_code, 400)
 
 if __name__ == '__main__':
     unittest.main()

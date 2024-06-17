@@ -76,6 +76,8 @@ class DataManager(IPersistenceManager):
             if entity_id in self.data[entity_type]:
                 del self.data[entity_type][entity_id]
 
+
+
 class Basemodel(ABC):
     def __init__(self):
         self.id = uuid4()
@@ -90,6 +92,9 @@ class Basemodel(ABC):
     @abstractmethod
     def to_obj(self):
         pass
+
+class ConflictError(Exception):
+    pass
 
 class User(Basemodel):
     def __init__(self, email, first_name, last_name):
@@ -135,21 +140,17 @@ class User(Basemodel):
         
         if not email or not isinstance(email, str) or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             raise TypeError("Email must be a non-empty string in a valid email format")
-        
-        if type(self).__name__ in DataManager.data:
-            for users in DataManager.data[type(self).__name__].values():
-                if users.email == email:
-                    raise ValueError("Email already taken")
 
+        self.validate_email(email)
 
     @classmethod
-    def validate_email(self, email):
-        if type(self).__name__ in DataManager.data:
-            for users in DataManager.data[type(self).__name__].values():
+    def validate_email(cls, email):
+        if cls.__name__ in DataManager.data:
+            for users in DataManager.data[cls.__name__].values():
                 if users.email == email:
-                    return False
-                    #raise ValueError("Email already taken")
-        return True
+                    raise ConflictError("Email already taken")
+
+        #return True
 
     @property
     def places(self):
@@ -273,19 +274,23 @@ class Storage:
 
 
 """pepe = User("pepe@pepe.com", "pepe", "cra")
-print("User =", pepe.first_name, "update_at =", pepe.updated_at)
+print(pepe.to_dict())
 print(DataManager.data)
 DataManager.save(pepe)
 print(DataManager.data)
+pepe2 = User("pepe@pepe.com", "pepe", "cra")
 
-pepe.first_name = "ramon"
-print("User =", pepe.first_name, "update_at =", pepe.updated_at)
+DataManager.save(pepe2)
+print(DataManager.data)"""
 
-DataManager.update(pepe)
+#pepe.first_name = "ramon"
+#print("User =", pepe.first_name, "update_at =", pepe.updated_at)
 
-user_from_data = DataManager.get(pepe.id, "User")
+#DataManager.update(pepe)
 
-print("User =", user_from_data.first_name, "update_at =", user_from_data.updated_at)"""
+#user_from_data = DataManager.get(pepe.id, "User")
+
+#print("User =", user_from_data.first_name, "update_at =", user_from_data.updated_at)
 
 #time.sleep(2)
 #DataManager.update(pepe)
