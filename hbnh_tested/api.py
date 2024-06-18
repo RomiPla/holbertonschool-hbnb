@@ -525,4 +525,5 @@ def validate_place(host_id, name, description, number_of_rooms, number_of_bathro
 
 if __name__ == "__main__":
     Storage.load()
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(host='0.0.0.0')
