@@ -170,23 +170,6 @@ class TestPlace_API(unittest.TestCase):
         if os.path.exists(Storage.file_path):
             os.remove(Storage.file_path)
 
-    """def test_add_place(self):
-        place_data = {
-            "host_id": str(uuid4()),
-            "name": "Test Place",
-            "description": "A place for testing",
-            "number_of_rooms": 3,
-            "number_of_bathrooms": 2,
-            "max_guests": 4,
-            "price_by_night": 100.0,
-            "latitude": 45.0,
-            "longitude": 90.0,
-            "city_id": str(uuid4())
-        }
-        response = self.app.post('/places', json=place_data)
-        self.assertEqual(response.status_code, 201)
-        self.assertIn("message", response.get_json())"""
-    
     def test_get_all_places(self):
         user = User("pepe@g.com", "Pedrito", "pe")
         User.add(user)
@@ -209,7 +192,7 @@ class TestPlace_API(unittest.TestCase):
         places = response.json
         self.assertEqual(len(places), 2)
 
-    def test_get_specific_place(self):
+    def test_get_place(self):
         user = User("pepe@g.com", "Pedrito", "pe")
         User.add(user)
         city = City("bondiola", "AR")
@@ -220,44 +203,66 @@ class TestPlace_API(unittest.TestCase):
         response = self.app.get(f'/places/{place1.id}')
         self.assertEqual(response.status_code, 200)
 
-        # Verificar que se retorna el lugar correcto
         retrieved_place = response.json
         self.assertEqual(retrieved_place["name"], "Place 1")
 
-"""    def test_update_place(self):
-        # Agregar un lugar de prueba a DataManager
-        place_id = str(uuid4())
-        place = Place(place_id, "Test Place", "A place for testing", 3, 2, 4, 100.0, 45.0, 90.0, str(uuid4()), [])
-        DataManager.save(place)
+    def test_add_place(self):
+        user = User("pepe@g.com", "Pedrito", "pe")
+        User.add(user)
+        city = City("bondiola", "AR")
+        City.add(city)
 
-        # Datos actualizados para el lugar
+        place_data = {
+            "host_id": str(user.id),
+            "name": "Test Place",
+            "description": "A place for testing",
+            "number_of_rooms": 3,
+            "number_of_bathrooms": 2,
+            "max_guests": 4,
+            "price_per_night": 100.0,
+            "latitude": 45.0,
+            "longitude": 90.0,
+            "city_id": str(city.id),
+            "amenity_ids": []
+        }
+        response = self.app.post('/places', json=place_data)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("message", response.get_json())
+
+    def test_update_place(self):
+        user = User("pepe@g.com", "Pedrito", "pe")
+        User.add(user)
+        city = City("bondiola", "AR")
+        City.add(city)
+        place1 = Place(user.id, "Place 1", "Description 1", 2, 1, 3, 80.0, 30.0, 50.0, city.id, [])
+        Place.add(place1)
+
         updated_data = {
             "name": "Updated Place",
             "description": "Updated description",
             "price_per_night": 120.0
-            # Otros campos actualizados según sea necesario
         }
 
-        response = self.app.put(f'/places/{place_id}', json=updated_data)
-        self.assertEqual(response.status_code, 200)  # Debe retornar 200 OK
+        response = self.app.put(f'/places/{place1.id}', json=updated_data)
+        self.assertEqual(response.status_code, 200)
 
-        # Verificar que el lugar fue actualizado correctamente
-        updated_place = DataManager.get(place_id, "Place")
+        updated_place = DataManager.get(place1.id, "Place")
         self.assertEqual(updated_place.name, "Updated Place")
         self.assertEqual(updated_place.description, "Updated description")
         self.assertEqual(updated_place.price_per_night, 120.0)
 
     def test_delete_place(self):
-        # Agregar un lugar de prueba a DataManager
-        place_id = str(uuid4())
-        place = Place(place_id, "Test Place", "A place for testing", 3, 2, 4, 100.0, 45.0, 90.0, str(uuid4()), [])
-        DataManager.save(place)
+        user = User("pepe@g.com", "Pedrito", "pe")
+        User.add(user)
+        city = City("bondiola", "AR")
+        City.add(city)
+        place1 = Place(user.id, "Place 1", "Description 1", 2, 1, 3, 80.0, 30.0, 50.0, city.id, [])
+        Place.add(place1)
 
-        response = self.app.delete(f'/places/{place_id}')
-        self.assertEqual(response.status_code, 204)  # Debe retornar 204 No Content
+        response = self.app.delete(f'/places/{place1.id}')
+        self.assertEqual(response.status_code, 204)
 
-        # Verificar que el lugar fue eliminado
-        self.assertNotIn(place_id, DataManager.data["Place"])
-    """
+        self.assertNotIn(place1.id, DataManager.data["Place"])
+    
 if __name__ == '__main__':
     unittest.main()

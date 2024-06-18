@@ -5,7 +5,7 @@ import re
 
 class Place(Basemodel):
     def __init__(self, host_id, name, description, number_of_rooms, \
-                 number_of_bathrooms, max_guests, price_by_nigth, \
+                 number_of_bathrooms, max_guests, price_per_night, \
                  latitude, longitude, city_id, amenity_ids=None):
      
         if amenity_ids is None:
@@ -13,7 +13,7 @@ class Place(Basemodel):
 
         self.validate_place(host_id, name, description, \
                             number_of_rooms, number_of_bathrooms,\
-                            max_guests, price_by_nigth, latitude, \
+                            max_guests, price_per_night, latitude, \
                             longitude, city_id)
         super().__init__()
         self.host_id = host_id
@@ -22,7 +22,7 @@ class Place(Basemodel):
         self.number_of_rooms = number_of_rooms 
         self.number_of_bathrooms = number_of_bathrooms
         self.max_guests = max_guests
-        self.price_by_night = float(price_by_nigth)
+        self.price_by_night = float(price_per_night)
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.city_id = city_id
@@ -72,17 +72,30 @@ class Place(Basemodel):
         place.updated_at = updated_at
         return place
 
-    def validate_place(self, host_id, name, description, number_of_rooms, number_of_bathrooms,\
-                 max_guests, price_by_nigth, latitude, longitude, city_id):
-
-        if not host_id or not name or not description or not number_of_rooms\
-            or not  number_of_bathrooms or not max_guests or not price_by_nigth\
-                or not latitude or not longitude or not city_id:
-            raise TypeError("All fields must be filled in.")
-
-        if host_id not in DataManager.data["User"]:
+    @classmethod
+    def validate_place_host_id(cls, host_id):
+       if host_id not in DataManager.data["User"]:
             raise ValueError(f"Host with id {host_id} does not exist.")
 
+    @classmethod
+    def validate_place_city_id(cls, city_id):
+        if city_id not in DataManager.data["City"]:
+            raise ValueError(f"City with id {city_id} does not exist.")
+
+    @classmethod
+    def validate_place_data(cls, host_id, city_id):
+        cls.validate_place_host_id(host_id)
+        cls.validate_place_city_id(city_id)
+
+
+    def validate_place(self, host_id, name, description, number_of_rooms, number_of_bathrooms,\
+                 max_guests, price_per_night, latitude, longitude, city_id):
+
+        if not host_id or not name or not description or not number_of_rooms\
+            or not  number_of_bathrooms or not max_guests or not price_per_night\
+                or not latitude or not longitude or not city_id:
+            raise TypeError("All fields must be filled in.")
+        
         if not re.match(r"^[A-Za-z0-9\s]+$", name):
             raise TypeError("Name cannot contain special characters.")
 
@@ -95,7 +108,7 @@ class Place(Basemodel):
         if not isinstance(max_guests, int) or max_guests < 0:
                 raise ValueError("Max guests must be a positive integer.")
 
-        if not isinstance(price_by_nigth, (int, float)) or price_by_nigth < 0:
+        if not isinstance(price_per_night, (int, float)) or price_per_night < 0:
                 raise ValueError("Price by nigth must be a positive number.")
 
         if not isinstance(latitude, (int, float)):
@@ -110,6 +123,4 @@ class Place(Basemodel):
         if not (-180 <= longitude <= 180):
             raise ValueError("Longitude must be between -180 and 180 degrees.")
 
-        if city_id not in DataManager.data["City"]:
-            raise ValueError(f"City with id {city_id} does not exist.")
-
+        self.validate_place_data(host_id, city_id)
