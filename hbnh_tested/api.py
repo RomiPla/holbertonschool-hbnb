@@ -367,6 +367,161 @@ def get_place(place_id):
         return jsonify(place.to_dict())
     else:
         return jsonify({"error": "Place not found"}), 404
+    
+@app.route('/places', methods=['POST'])
+def add_place():
+    data = request.get_json()
+    required_fields = ['host_id', 'name', 'description', 'number_of_rooms', 'number_of_bathrooms', 
+                       'max_guests', 'price_per_night', 'latitude', 'longitude', 'city_id', 'amenity_ids']
+    for field in required_fields:
+        if field not in data:
+            return jsonify(f"Missing required field: {field}"), 400
+
+    try:
+        validate_place(UUID(data.get("host_id")), data.get("name"), data.get("description"),
+                       data.get("number_of_rooms"), data.get("number_of_bathrooms"),
+                       data.get("max_guests"), data.get("price_per_night"),
+                       data.get("latitude"), data.get("longitude"), UUID(data.get("city_id")))
+    except TypeError as e:
+        return jsonify({"error": str(e)}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+
+    new = Place(UUID(data.get("host_id")), data.get("name"), data.get("description"),
+                       data.get("number_of_rooms"), data.get("number_of_bathrooms"),
+                       data.get("max_guests"), data.get("price_per_night"),
+                       data.get("latitude"), data.get("longitude"), UUID(data.get("city_id")),
+                       data.get("amenity_ids"))
+    Place.add(new)
+    return jsonify({"message": "Place added", "place": new.to_dict()}), 201
+
+@app.route('/places/<place_id>', methods=['PUT'])
+def update_place(place_id):
+    try:
+        place_uuid = UUID(place_id)
+    except ValueError:
+        return jsonify({"error": "Invalid place ID format"}), 400
+    to_update = Place.get(place_uuid)
+    if to_update is not None:
+        update_data = request.get_json()
+        host_id = update_data.get("host_id")
+        name = update_data.get("name")
+        description = update_data.get("description")
+        number_of_rooms = update_data.get("number_of_rooms")
+        number_of_bathrooms = update_data.get("number_of_bathrooms")
+        max_guests = update_data.get("max_guests")
+        price_per_night = update_data.get("price_per_night")
+        latitude = update_data.get("latitude")
+        longitude = update_data.get("longitude")
+        city_id = update_data.get("city_id")
+        amenity_ids = update_data.get("amenity_ids")
+
+        if name:
+            validate_place_name(name)
+            to_update.name = name
+        if description:
+            to_update.description = description
+        if host_id:
+            Place.validate_place_host_id(UUID(host_id))
+            to_update.host_id = UUID(host_id)
+        if number_of_rooms:
+            validate_place_number_of_rooms(number_of_rooms)
+            to_update.number_of_rooms = number_of_rooms
+        if number_of_bathrooms:
+            validate_place_number_of_bathrooms(number_of_bathrooms)
+            to_update.number_of_bathrooms = number_of_bathrooms
+        if max_guests:
+            validate_place_max_guests(max_guests)
+            to_update.max_guests = max_guests
+        if price_per_night:
+            validate_place_price_per_night(price_per_night)
+            to_update.price_per_night = price_per_night
+        if latitude:
+            validate_place_latitude(latitude)
+            to_update.latitude = latitude
+        if longitude:
+            validate_place_longitude(longitude)
+            to_update.longitude = longitude
+        if city_id:
+            Place.validate_place_city_id(UUID(city_id))
+            to_update.city_id = (UUID(city_id))
+        if amenity_ids:
+            to_update.amenity_ids = amenity_ids
+
+        Place.update(to_update)
+        return jsonify({"message": "Place updated", "place": to_update.to_dict()}), 200
+    else:
+        return jsonify({"error": "Place not found"}), 404
+
+@app.route('/places/<place_id>', methods=['DELETE'])
+def delete_place(place_id):
+    try:
+        place_uuid = UUID(place_id)
+    except ValueError:
+        return jsonify({"error": "Invalid place ID format"}), 400
+    to_delete = Place.get(place_uuid)
+    if to_delete is not None:
+        Place.delete(to_delete)
+        return '', 204
+    else:
+        return jsonify({"error": "Place not found"}), 404
+
+def validate_place_name(name):
+    if not re.match(r"^[A-Za-z0-9\s]+$", name):
+        raise TypeError("Name cannot contain special characters.")
+
+def validate_place_number_of_rooms(number_of_rooms):
+    if not isinstance(number_of_rooms, int) or number_of_rooms < 0:
+        raise TypeError("Number of rooms must be a positive integer.")
+    
+def validate_place_number_of_bathrooms(number_of_bathrooms):
+    if not isinstance(number_of_bathrooms, int) or number_of_bathrooms < 0:
+        raise TypeError("Number of bathrooms must be a positive integer.")
+
+def validate_place_max_guests(max_guests):
+    if not isinstance(max_guests, int) or max_guests < 0:
+        raise TypeError("Max guests must be a positive integer.")
+    
+def validate_place_price_per_night(price_per_night):
+    if not isinstance(price_per_night, (int, float)) or price_per_night < 0:
+        raise TypeError("Price by nigth must be a positive number.")
+
+def validate_place_latitude(latitude):
+    if not isinstance(latitude, (int, float)):
+        raise TypeError("Latitude must be a number.")
+    if not (-90 <= latitude <= 90):
+            raise TypeError("Latitude must be between -90 and 90 degrees.")
+
+def validate_place_longitude(longitude):
+    if not isinstance(longitude, (int, float)):
+        raise TypeError("Longitude must be a number.")
+
+    if not (-180 <= longitude <= 180):
+        raise TypeError("Longitude must be between -180 and 180 degrees.")
+
+def validate_place(host_id, name, description, number_of_rooms, number_of_bathrooms,\
+                 max_guests, price_per_night, latitude, longitude, city_id):
+
+        if not host_id or not name or not description or not number_of_rooms\
+            or not  number_of_bathrooms or not max_guests or not price_per_night\
+                or not latitude or not longitude or not city_id:
+            raise TypeError("All fields must be filled in.")
+
+        validate_place_name(name)
+
+        validate_place_number_of_rooms(number_of_rooms)
+
+        validate_place_number_of_bathrooms(number_of_bathrooms)
+
+        validate_place_max_guests(max_guests)
+
+        validate_place_price_per_night(price_per_night)
+
+        validate_place_latitude(latitude)
+
+        validate_place_longitude(longitude)
+
+        Place.validate_place_data(host_id, city_id)
 
 if __name__ == "__main__":
     Storage.load()
